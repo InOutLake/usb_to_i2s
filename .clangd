@@ -1,0 +1,14 @@
+CompileFlags:
+  Add: [
+    "-target", "arm-none-eabi",
+    "-mcpu=cortex-m7",
+    "-mthumb",
+    "-mfloat-abi=hard",
+    "-mfpu=fpv5-d16",
+    # "--no-standard-includes"
+  ]
+  Compiler: arm-none-eabi-gcc
+
+Config:
+  CompileFlags:
+    QueryDriver: [ "arm-none-eabi-gcc", "arm-none-eabi-g++" ]

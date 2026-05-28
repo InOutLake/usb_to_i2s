@@ -1,0 +1,3 @@
+[submodule "Appli/Third_Party/tinyusb"]
+	path = Appli/Third_Party/tinyusb
+	url = git@github.com:hathach/tinyusb.git
