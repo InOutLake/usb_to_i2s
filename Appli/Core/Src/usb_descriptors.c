@@ -1,16 +1,12 @@
 #include "usb_descriptors.h"
 #include "tusb.h"
-#include "tusb_config.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 
 /* A combination of interfaces must have a unique product id, since PC will save
  * device driver after the first plug. Same VID/PID with different interface e.g
  * MSC (first), then CDC (later) will possibly cause system error on PC.
  *
  * Auto ProductID layout's Bitmap:
- *   [MSB]     AUDIO | MIDI | HID | MSC | CDC          [LSB]
+ * [MSB]     AUDIO | MIDI | HID | MSC | CDC          [LSB]
  */
 #define PID_MAP(itf, n) ((CFG_TUD_##itf) ? (1 << (n)) : 0)
 #define USB_PID                                                                \
@@ -53,16 +49,74 @@ uint8_t const *tud_descriptor_device_cb(void) {
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 #define CONFIG_TOTAL_LEN                                                       \
-  (TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_HEADSET_STEREO_DESC_LEN)
+  (TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_SPEAKER_STEREO_DESC_LEN)
 
-#define EPNUM_AUDIO_IN 0x01
+#if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X ||                                      \
+    CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
+// LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
+// 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
+#define EPNUM_AUDIO_OUT 0x03
+#define EPNUM_AUDIO_INT 0x01
+
+#elif CFG_TUSB_MCU == OPT_MCU_CXD56
+// CXD56 USB driver has fixed endpoint type (bulk/interrupt/iso) and direction
+// (IN/OUT) by its number 0 control (IN/OUT), 1 Bulk (IN), 2 Bulk (OUT), 3 In
+// (IN), 4 Bulk (IN), 5 Bulk (OUT), 6 In (IN)
+#define EPNUM_AUDIO_OUT 0x02
+#define EPNUM_AUDIO_INT 0x03
+
+#elif CFG_TUSB_MCU == OPT_MCU_NRF5X
+// ISO endpoints for NRF5x are fixed to 0x08 (0x88)
+#define EPNUM_AUDIO_OUT 0x08
+#define EPNUM_AUDIO_INT 0x01
+
+#elif CFG_TUD_ENDPOINT_ONE_DIRECTION_ONLY
+// MCUs that don't support a same endpoint number with different direction IN
+// and OUT defined in tusb_mcu.h
+//    e.g EP1 OUT & EP1 IN cannot exist together
+#if TU_CHECK_MCU(OPT_MCU_MAX32650, OPT_MCU_MAX32666, OPT_MCU_MAX32690,         \
+                 OPT_MCU_MAX78002)
+// Put audio iso on EP10/11 so the 4096-byte FIFOs can back double packet
+// buffering
+#define EPNUM_AUDIO_OUT 0x0A
+#define EPNUM_AUDIO_INT 0x01
+#else
+#define EPNUM_AUDIO_OUT 0x02
+#define EPNUM_AUDIO_INT 0x03
+#endif
+
+#else
 #define EPNUM_AUDIO_OUT 0x01
 #define EPNUM_AUDIO_INT 0x02
+#endif
+
+// -- UAC1 Configuration (Fallback) --
+#define CONFIG_UAC1_TOTAL_LEN                                                  \
+  (TUD_CONFIG_DESC_LEN + TUD_AUDIO10_SPEAKER_STEREO_DESC_LEN(6))
+
+uint8_t const desc_uac1_configuration[] = {
+    // Config number, interface count, string index, total length, attribute,
+    // power in mA
+    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_UAC1_TOTAL_LEN, 0x00,
+                          100),
+
+    // Interface number, string index, bytes per sample RX, bits used per
+    // sample RX, EP Out address, EP sizes, sample rates
+    TUD_AUDIO10_SPEAKER_STEREO_DESCRIPTOR(
+        ITF_NUM_AUDIO_CONTROL, 4,
+        CFG_TUD_AUDIO_FUNC_1_FORMAT_1_N_BYTES_PER_SAMPLE_RX,
+        CFG_TUD_AUDIO_FUNC_1_FORMAT_1_RESOLUTION_RX, EPNUM_AUDIO_OUT,
+        CFG_TUD_AUDIO10_FUNC_1_FORMAT_1_EP_SZ_OUT, 44100, 48000, 88200, 96000,
+        176400, 192000)};
+
+TU_VERIFY_STATIC(sizeof(desc_uac1_configuration) == CONFIG_UAC1_TOTAL_LEN,
+                 "Incorrect size");
 
 #if TUD_OPT_HIGH_SPEED
 
+// -- UAC2 Configuration (High-Speed) --
 #define CONFIG_UAC2_TOTAL_LEN                                                  \
-  (TUD_CONFIG_DESC_LEN + TUD_AUDIO20_HEADSET_STEREO_DESC_LEN)
+  (TUD_CONFIG_DESC_LEN + TUD_AUDIO20_SPEAKER_STEREO_DESC_LEN)
 
 uint8_t const desc_uac2_configuration[] = {
     // Config number, interface count, string index, total length, attribute,
@@ -70,9 +124,9 @@ uint8_t const desc_uac2_configuration[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_UAC2_TOTAL_LEN, 0x00,
                           100),
 
-    // String index, EP Out & EP In address, EP Interrupt address
-    TUD_AUDIO20_HEADSET_STEREO_DESCRIPTOR(
-        5, EPNUM_AUDIO_OUT, EPNUM_AUDIO_IN | 0x80, EPNUM_AUDIO_INT | 0x80)};
+    // String index, EP Out address, EP Interrupt address
+    TUD_AUDIO20_SPEAKER_STEREO_DESCRIPTOR(5, EPNUM_AUDIO_OUT,
+                                          EPNUM_AUDIO_INT | 0x80)};
 
 TU_VERIFY_STATIC(sizeof(desc_uac2_configuration) == CONFIG_UAC2_TOTAL_LEN,
                  "Incorrect size");
@@ -93,19 +147,11 @@ tusb_desc_device_qualifier_t const desc_device_qualifier = {
     .bReserved = 0x00};
 
 // Invoked when received GET DEVICE QUALIFIER DESCRIPTOR request
-// Application return pointer to descriptor, whose contents must exist long
-// enough for transfer to complete. device_qualifier descriptor describes
-// information about a high-speed capable device that would change if the device
-// were operating at the other speed. If not highspeed capable stall this
-// request.
 uint8_t const *tud_descriptor_device_qualifier_cb(void) {
   return (uint8_t const *)&desc_device_qualifier;
 }
 
 // Invoked when received GET OTHER SEED CONFIGURATION DESCRIPTOR request
-// Application return pointer to descriptor, whose contents must exist long
-// enough for transfer to complete Configuration descriptor in the other speed
-// e.g if high speed then this is for full speed and vice versa
 uint8_t const *tud_descriptor_other_speed_configuration_cb(uint8_t index) {
   (void)index; // for multiple configurations
 
@@ -116,8 +162,6 @@ uint8_t const *tud_descriptor_other_speed_configuration_cb(uint8_t index) {
 #endif
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
-// Application return pointer to descriptor
-// Descriptor contents must exist long enough for transfer to complete
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
   (void)index; // for multiple configurations
 #if TUD_OPT_HIGH_SPEED
@@ -147,18 +191,16 @@ enum {
 // array of pointer to string descriptors
 static char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
-    "TinyUSB",                  // 1: Manufacturer
-    "TinyUSB Headset",          // 2: Product
+    "Me",                       // 1: Manufacturer
+    "INsoul audio",             // 2: Product
     NULL,                       // 3: Serials will use unique ID if possible
-    "TinyUSB UAC1 Headset",     // 4: Function
-    "TinyUSB UAC2 Headset",     // 5: Function
+    "TinyUSB UAC1 Speaker",     // 4: Function (Updated to Speaker)
+    "TinyUSB UAC2 Speaker",     // 5: Function (Updated to Speaker)
 };
 
 static uint16_t _desc_str[32 + 1];
 
 // Invoked when received GET STRING DESCRIPTOR request
-// Application return pointer to descriptor, whose contents must exist long
-// enough for transfer to complete
 uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
   (void)langid;
   size_t chr_count;
@@ -169,19 +211,9 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     chr_count = 1;
     break;
 
-  case STRID_SERIAL: {
-    uint32_t *uid = (uint32_t *)0x1FF1E800;
-    char serial_str[25];
-
-    snprintf(serial_str, sizeof(serial_str), "%08X%08X%08X",
-             (unsigned int)uid[0], (unsigned int)uid[1], (unsigned int)uid[2]);
-
-    chr_count = strlen(serial_str);
-    for (size_t i = 0; i < chr_count; i++) {
-      _desc_str[1 + i] = serial_str[i];
-    }
+  case STRID_SERIAL:
+    // TODO: fill
     break;
-  }
 
   default:
     // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.

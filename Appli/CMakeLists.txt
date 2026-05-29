@@ -72,7 +72,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${TUSB_COMMON}
 
     Third_Party/tinyusb/src/portable/synopsys/dwc2/dcd_dwc2.c
+    Third_Party/tinyusb/src/portable/synopsys/dwc2/dwc2_common.c
     Third_Party/tinyusb/src/class/audio/audio_device.c
+
+    Core/Src/usb_descriptors.c
 )
 
 # Link directories setup
