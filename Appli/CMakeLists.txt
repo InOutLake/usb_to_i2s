@@ -100,6 +100,11 @@ if((CMAKE_C_STANDARD EQUAL 90) OR (CMAKE_C_STANDARD EQUAL 99))
   message(ERROR "Generated code requires C11 or higher")
 endif()
 
+add_custom_command(TARGET usb_to_i2s_Appli POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary usb_to_i2s_Appli.elf usb_to_i2s_Appli.bin
+    COMMENT "Generating .bin file from .elf"
+    VERBATIM
+)
 
 
 
