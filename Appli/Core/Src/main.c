@@ -112,6 +112,7 @@ int main(void)
   MX_USB_OTG_HS_PCD_Init();
   MX_USART1_UART_Init();
   MX_SAI1_Init();
+  HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t*)audio_buffer, BUFFER_SIZE_SAMPLES);
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

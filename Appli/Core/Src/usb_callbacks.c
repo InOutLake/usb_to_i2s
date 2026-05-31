@@ -3,12 +3,10 @@
 #include "stm32h7rsxx.h"
 #include "stm32h7rsxx_hal_gpio.h"
 #include "stm32h7rsxx_hal_rcc_ex.h"
+#include "usb_callbacks.h"
 
 // Ring buffer trackers
 #define BUFFER_SIZE_SAMPLES (2048)
-int32_t audio_buffer[BUFFER_SIZE_SAMPLES];
-volatile uint32_t wr_ptr = 0;
-volatile uint32_t rd_ptr = 0;
 
 uint32_t current_sample_rate = 44100;
 
@@ -253,8 +251,6 @@ void led_blinking_task(void) {
 
 /* ----- Audio ----- */
 
-#define BUFFER_SIZE_SAMPLES  (2048)
-
 TU_ATTR_FAST_FUNC void tud_audio_feedback_interval_isr(uint8_t func_id, uint32_t frame_number, uint8_t interval_shift)
 {
   (void) frame_number;
@@ -284,8 +280,9 @@ void tud_audio_feedback_params_cb(uint8_t func_id, uint8_t alt_itf, audio_feedba
 }
 
 __attribute__((section(".d2_noncacheable"))) int32_t audio_buffer[BUFFER_SIZE_SAMPLES];
-extern volatile uint32_t wr_ptr;
-extern volatile uint32_t rd_ptr;
+
+volatile uint32_t wr_ptr = 0;
+volatile uint32_t rd_ptr = 0;
 
 static uint8_t local_packet_chunk[CFG_TUD_AUDIO_FUNC_EP_OUT_SIZE_MAX];
 
