@@ -227,13 +227,20 @@ SECTIONS
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
 
-
   RW_NONCACHEABLE (NOLOAD):
   {
     __NONCACHEABLEBUFFER_BEGIN = .;/* create symbol for start of section */
     KEEP(*(noncacheable_buffer))
     __NONCACHEABLEBUFFER_END = .;  /* create symbol for start of section */
   } > RAM_NONCACHEABLEBUFFER
+
+
+  .d2_noncacheable (NOLOAD) :
+    {
+      . = ALIGN(32);
+      KEEP(*(.d2_noncacheable))
+      . = ALIGN(32);
+    } > RAM_NONCACHEABLEBUFFER
 
   /* User_heap_stack section, used to check that there is enough "DTCM" Ram  type memory left */
   ._user_heap_stack (NOLOAD) :

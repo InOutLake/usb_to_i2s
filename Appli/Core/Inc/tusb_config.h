@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#define CFG_TUSB_DEBUG    1
 #define N_FREQUENCIES 6
 //--------------------------------------------------------------------+
 // BOARD TARGET & CONTROLLER CONFIGURATION
@@ -55,6 +56,8 @@ extern "C" {
 
 // Default is max speed that hardware controller could support with on-chip PHY
 #define CFG_TUD_MAX_SPEED BOARD_TUD_MAX_SPEED
+
+#define CFG_TUD_AUDIO_FUNC_EP_OUT_SIZE_MAX 256
 
 /* USB DMA on some MCUs can only access a specific SRAM region with restriction
  * on alignment. Tinyusb use follows macros to declare transferring memory so

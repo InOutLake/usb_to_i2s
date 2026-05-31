@@ -13,6 +13,15 @@
 C:\\path-to\st-flash.exe --reset write "C:\path-to\INsoulAudio.bin" 0x08000000
 ```
 
+Программа будет загружена на чип. После этого подключите чип через usb к компьютеру. Устройство должно распознаться как аудиовыход.
+## Карта пинов
+- A5 - 48 generator enable
+- A7 - 41 generator enable
+- D6 - I2S Clock
+- E4 - I2S Word Select
+- E6 - I2S Data 
+
+
 
 
 

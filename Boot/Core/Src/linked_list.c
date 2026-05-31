@@ -25,7 +25,7 @@
 
 /* USER CODE END Includes */
 
-DMA_NodeTypeDef HPDMA_SAIA __attribute__((section("noncacheable_buffer")));
+DMA_NodeTypeDef GPDMA_SAI __attribute__((section("noncacheable_buffer")));
 DMA_QListTypeDef YourQueueName;
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,11 +80,11 @@ HAL_StatusTypeDef MX_YourQueueName_Config(void)
   pNodeConfig.DstAddress = 0;
   pNodeConfig.DataSize = 0;
 
-  /* Build HPDMA_SAIA Node */
-  ret |= HAL_DMAEx_List_BuildNode(&pNodeConfig, &HPDMA_SAIA);
+  /* Build GPDMA_SAI Node */
+  ret |= HAL_DMAEx_List_BuildNode(&pNodeConfig, &GPDMA_SAI);
 
-  /* Insert HPDMA_SAIA to Queue */
-  ret |= HAL_DMAEx_List_InsertNode_Tail(&YourQueueName, &HPDMA_SAIA);
+  /* Insert GPDMA_SAI to Queue */
+  ret |= HAL_DMAEx_List_InsertNode_Tail(&YourQueueName, &GPDMA_SAI);
 
    return ret;
 }

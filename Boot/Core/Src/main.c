@@ -41,8 +41,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-DMA_HandleTypeDef handle_HPDMA1_Channel0;
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -50,7 +48,7 @@ DMA_HandleTypeDef handle_HPDMA1_Channel0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MPU_Config(void);
-static void MX_HPDMA1_Init(void);
+static void MX_GPDMA1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -91,7 +89,7 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_HPDMA1_Init();
+  MX_GPDMA1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -179,40 +177,26 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief HPDMA1 Initialization Function
+  * @brief GPDMA1 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_HPDMA1_Init(void)
+static void MX_GPDMA1_Init(void)
 {
 
-  /* USER CODE BEGIN HPDMA1_Init 0 */
+  /* USER CODE BEGIN GPDMA1_Init 0 */
 
-  /* USER CODE END HPDMA1_Init 0 */
+  /* USER CODE END GPDMA1_Init 0 */
 
   /* Peripheral clock enable */
-  __HAL_RCC_HPDMA1_CLK_ENABLE();
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
 
-  /* USER CODE BEGIN HPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 1 */
 
-  /* USER CODE END HPDMA1_Init 1 */
-  handle_HPDMA1_Channel0.Instance = HPDMA1_Channel0;
-  handle_HPDMA1_Channel0.InitLinkedList.Priority = DMA_HIGH_PRIORITY;
-  handle_HPDMA1_Channel0.InitLinkedList.LinkStepMode = DMA_LSM_FULL_EXECUTION;
-  handle_HPDMA1_Channel0.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0;
-  handle_HPDMA1_Channel0.InitLinkedList.TransferEventMode = DMA_TCEM_LAST_LL_ITEM_TRANSFER;
-  handle_HPDMA1_Channel0.InitLinkedList.LinkedListMode = DMA_LINKEDLIST_CIRCULAR;
-  if (HAL_DMAEx_List_Init(&handle_HPDMA1_Channel0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_DMA_ConfigChannelAttributes(&handle_HPDMA1_Channel0, DMA_CHANNEL_NPRIV) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN HPDMA1_Init 2 */
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
 
-  /* USER CODE END HPDMA1_Init 2 */
+  /* USER CODE END GPDMA1_Init 2 */
 
 }
 
