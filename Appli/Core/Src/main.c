@@ -15,6 +15,7 @@
  *
  ******************************************************************************
  */
+
 #include "tusb.h"
 #include "usb_callbacks.h"
 /* USER CODE END Header */
@@ -112,7 +113,6 @@ int main(void)
   MX_USB_OTG_HS_PCD_Init();
   MX_USART1_UART_Init();
   MX_SAI1_Init();
-  HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t*)audio_buffer, BUFFER_SIZE_SAMPLES);
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -298,17 +298,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SIGNAL_LED_GPIO_Port, SIGNAL_LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, ENABLE_41_Pin|ENABLE_48_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : SIGNAL_LED_Pin */
-  GPIO_InitStruct.Pin = SIGNAL_LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SIGNAL_LED_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SIGNAL_LED_GPIO_Port, SIGNAL_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : ENABLE_41_Pin ENABLE_48_Pin */
   GPIO_InitStruct.Pin = ENABLE_41_Pin|ENABLE_48_Pin;
@@ -316,6 +309,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SIGNAL_LED_Pin */
+  GPIO_InitStruct.Pin = SIGNAL_LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SIGNAL_LED_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

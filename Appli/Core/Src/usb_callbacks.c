@@ -1,4 +1,5 @@
 #include "tusb.h"
+#include "main.h"
 #include "audio_device.h"
 #include "stm32h7rsxx.h"
 #include "stm32h7rsxx_hal_gpio.h"
@@ -82,9 +83,13 @@ static bool audio20_clock_set_request(uint8_t rhport,
     if (current_sample_rate / 48000 == 0) {
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1;
       PeriphClkInitStruct.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLL2P;
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, 0);
     } else {
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1;
       PeriphClkInitStruct.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLL3P;
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, 1);
     }
 
     TU_LOG1("Clock set current freq: %" PRIu32 "\r\n", current_sample_rate);
@@ -173,6 +178,42 @@ static bool audio20_feature_unit_set_request(uint8_t rhport, audio20_control_req
   }
 }
 
+// Works on button, not necessary
+// void audio_control_task(void) {
+//   const uint32_t interval_ms = 50;
+//   static uint32_t start_ms = 0;
+//   static uint32_t btn_prev = 0;
+//
+//   if (tusb_time_millis_api() - start_ms < interval_ms) return;// not enough time
+//   start_ms += interval_ms;
+//
+//
+//   // Even UAC1 spec have status interrupt support like UAC2, most host do not support it
+//   // So you have to either use UAC2 or use old day HID volume control
+//   TU_VERIFY((tud_audio_version() == 1),);
+//
+//   if (!btn_prev && btn) {
+//     // Adjust volume between 0dB (100%) and -30dB (10%)
+//     for (int i = 0; i < CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX + 1; i++) {
+//       volume[i] = volume[i] == 0 ? -VOLUME_CTRL_30_DB : 0;
+//     }
+//
+//     // 6.1 Interrupt Data Message
+//     const audio_interrupt_data_t data = {.v2 = {
+//         .bInfo = 0,                                      // Class-specific interrupt, originated from an interface
+//         .bAttribute = AUDIO20_CS_REQ_CUR,                // Caused by current settings
+//         .wValue_cn_or_mcn = 0,                           // CH0: master volume
+//         .wValue_cs = AUDIO20_FU_CTRL_VOLUME,             // Volume change
+//         .wIndex_ep_or_int = 0,                           // From the interface itself
+//         .wIndex_entity_id = UAC2_ENTITY_SPK_FEATURE_UNIT,// From feature unit
+//     }};
+//
+//     tud_audio_int_write(&data);
+//   }
+//
+//   btn_prev = btn;
+// }
+
 /* ----- Firmware control ----- */
 static bool audio20_get_req_entity(uint8_t rhport, tusb_control_request_t const *p_request) {
   audio20_control_request_t const *request = (audio20_control_request_t const *) p_request;
@@ -244,7 +285,7 @@ void led_blinking_task(void) {
   if (tusb_time_millis() - start_ms < blink_interval_ms) return;
   start_ms += blink_interval_ms;
 
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, led_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SIGNAL_LED_GPIO_Port, SIGNAL_LED_Pin, led_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
   led_state = !led_state;
 }
 
